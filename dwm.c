@@ -43,6 +43,7 @@
 
 #include "drw.h"
 #include "util.h"
+#include "system.h" //extra
 
 /* macros */
 #define BUTTONMASK              (ButtonPressMask|ButtonReleaseMask)
@@ -447,9 +448,15 @@ attachstack(Client *c)
 }
 
 void
+togglecoolerboost()
+{
+
+}
+
+void
 buttonpress(XEvent *e)
 {
-	unsigned int i, x, click;
+	unsigned int i, x, click, tw_status;
 	Arg arg = {0};
 	Client *c;
 	Monitor *m;
@@ -463,6 +470,7 @@ buttonpress(XEvent *e)
 		focus(NULL);
 	}
 	if (ev->window == selmon->barwin) {
+		tw_status = TEXTW(stext) - lrpad;
 		i = x = 0;
 		do
 			x += TEXTW(tags[i]);
@@ -472,8 +480,10 @@ buttonpress(XEvent *e)
 			arg.ui = 1 << i;
 		} else if (ev->x < x + TEXTW(selmon->ltsymbol))
 			click = ClkLtSymbol;
-		else if (ev->x > selmon->ww - (int)TEXTW(stext))
+		else if (ev->x > selmon->ww - (int)tw_status)
 			click = ClkStatusText;
+		else if (ev->x > (selmon->ww - (tw_status + TEXTW(bar_buttons[0]) - lrpad + 10))) //Work around for clicking offsets
+			toggle_cb();
 		else
 			click = ClkWinTitle;
 	} else if ((c = wintoclient(ev->window))) {
@@ -743,11 +753,14 @@ drawbar(Monitor *m)
 		return;
 
 	/* draw status first so it can be overdrawn by tags later */
-	if (m == selmon) { /* status is only drawn on selected monitor */
-		drw_setscheme(drw, scheme[SchemeNorm]);
-		tw = TEXTW(stext) - lrpad + 2; /* 2px right padding */
-		drw_text(drw, m->ww - tw, 0, tw, bh, 0, stext, 0);
-	}
+	drw_setscheme(drw, scheme[SchemeNorm]);
+	tw = TEXTW(stext) - lrpad + 2; /* 2px right padding */
+	drw_text(drw, m->ww - tw, 0, tw, bh, 0, stext, 0);
+	
+	int text_width = TEXTW(bar_buttons[0]) -lrpad + 10;
+	drw_text(drw, m->ww - text_width - tw, 0, text_width, bh, 0, bar_buttons[0], 0);
+	
+	tw += text_width;
 
 	for (c = m->clients; c; c = c->next) {
 		occ |= c->tags;

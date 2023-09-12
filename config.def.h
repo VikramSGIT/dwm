@@ -10,7 +10,7 @@ static const unsigned int gappov    = 10;       /* vert outer gap between window
 static const int smartgaps          = 0;        /* 1 means no outer gap when there is only one window */
 static const int showbar            = 1;        /* 0 means no bar */
 static const int topbar             = 1;        /* 0 means bottom bar */
-static const char *fonts[]          = { "monospace:size=10" };
+static const char *fonts[]          = { "Noto Sans Mono:style=Regular:size=10", "Symbols Nerd Font Mono:style=Regular:size=10" };
 static const char dmenufont[]       = "monospace:size=10";
 static const char col_gray1[]       = "#222222";
 static const char col_gray2[]       = "#444444";
@@ -25,7 +25,7 @@ static const char *colors[][3]      = {
 
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
-
+static const char *bar_buttons[] = { "COOLER BOOST" };
 static const Rule rules[] = {
 	/* xprop(1):
 	 *	WM_CLASS(STRING) = instance, class
@@ -45,8 +45,8 @@ static const int lockfullscreen = 1; /* 1 will force focus on the fullscreen win
 
 static const Layout layouts[] = {
 	/* symbol     arrange function */
-	{ "[]=",      tile },    /* first entry is default */
-	{ "><>",      NULL },    /* no layout function means floating behavior */
+	{ "default",      tile },    /* first entry is default */
+	{ "floating",      NULL },    /* no layout function means floating behavior */
 	{ "[M]",      monocle },
 };
 
@@ -64,14 +64,20 @@ static const Layout layouts[] = {
 /* commands */
 static const char *termcmd[]  = { "alacritty", NULL };
 static const char *browser[]  = { "brave", NULL };
+static const char *browser_other[]  = { "firefox", NULL };
 static const char *explorer[]  = { "thunar", NULL };
+static const char *discord[]  = { "discord", NULL };
+static const char *patchbay[] = { "qpwgraph", NULL };
 
 static const Key keys[] = {
 	/* modifier                     key        function        argument */
-	{ MODKEY,		                XK_Return, spawn,          {.v = termcmd } },
-	{ MODKEY,		                XK_b,      spawn,          {.v = browser } },
-	{ MODKEY,		                XK_e,      spawn,          {.v = explorer } },
-	{ MODKEY|ShiftMask,             XK_b,      togglebar,      {0} },
+	{ MODKEY,		        XK_Return, spawn,          {.v = termcmd } },
+	{ MODKEY,		        XK_b,      spawn,          {.v = browser } },
+	{ MODKEY,		        XK_e,      spawn,          {.v = explorer } },
+	{ MODKEY,		        XK_d,      spawn,          {.v = discord } },
+	{ MODKEY,		        XK_p,      spawn,          {.v = patchbay } },
+	{ MODKEY|ShiftMask,	        XK_b,      spawn,          {.v = browser_other } },
+	{ MODKEY|ShiftMask,             XK_p,      togglebar,      {0} },
 	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
 	{ MODKEY,                       XK_k,      focusstack,     {.i = -1 } },
 	{ MODKEY,                       XK_i,      incnmaster,     {.i = +1 } },
