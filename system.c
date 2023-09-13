@@ -8,16 +8,35 @@
 #include <unistd.h>
 #include <time.h>
 
-int clientSocket;
-char buffer[64];
+static FILE* batcap_file;
+static FILE* batstate_file;
+static FILE* mem_file;
 
-void init() {
+static const char* batcap = "/sys/class/power_supply/BAT1/capacity";
+static const char* batstate = "/sys/class/power_supply/BAT1/status";
+static const char* mem = "/proc/meminfo";
+static const char* netstatus = "nmcli | awk \'/connected to/ {print $4}\'";
+static const char* bright = "/home/dedshot/Projects/timesup/scripts/system_status.sh getbright";
+static const char* incbright = "/home/dedshot/Projects/timesup/scripts/system_status.sh incbright";
+static const char* decbright = "/home/dedshot/Projects/timesup/scripts/system_status.sh decbright";
+static const char* vol = "/home/dedshot/Projects/timesup/scripts/system_status.sh getvol";
+static const char* decvol = "/home/dedshot/Projects/timesup/scripts/system_status.sh decvol";
+static const char* incvol = "/home/dedshot/Projects/timesup/scripts/system_status.sh incvol";
+static const char* togglemute = "/home/dedshot/Projects/timesup/scripts/system_status.sh togglemute";
+static const char* getmute = "/home/dedshot/Projects/timesup/scripts/system_status.sh getmute";
+
+static const char* SERVER_IP = "127.0.0.1";
+static const int PORT = 12345;
+int clientSocket;
+char buffer[128];
+
+int init() {
 	batcap_file = fopen(batcap, "r");
 	batstate_file = fopen(batstate, "r");
 	mem_file = fopen(mem, "r");
 
 	clientSocket = socket(AF_INET, SOCK_STREAM, 0);
-	if(clientSocket == -1) return;
+	if(clientSocket == -1) return -1;
 
 	struct sockaddr_in serverAddress;
 	serverAddress.sin_family = AF_INET;
@@ -25,14 +44,16 @@ void init() {
 	if(inet_pton(AF_INET, SERVER_IP, &serverAddress.sin_addr) <= 0) {
 		close(clientSocket);
 		clientSocket = -1;
-		return;
+		return - 1;
 	}
 
 	if (connect(clientSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) == -1) {
 		close(clientSocket);
 		clientSocket = -1;
-		return;
+		return -1;
 	}
+	if(!batcap_file || !batstate_file || !mem_file) return -1;
+	return 1;
 }
 
 int cmd_server() {
@@ -53,7 +74,7 @@ int cmd_server() {
 int toggle_cb() {
 	strcpy(buffer, "toggle-cooler-boost");
 	int len = cmd_server();
-	if(len <= 0) return -1; 
+	if(len <= 0) return -1;
 	return atoi(buffer);
 }
 
@@ -65,7 +86,7 @@ int get_cb() {
 }
 
 int get_vol() {
-	int res;
+	int res = -1;
 	FILE* pipe = popen(vol, "r");
 	char buffer[8];
 	if(pipe && fgets(buffer, sizeof(buffer), pipe) != NULL) {
@@ -78,7 +99,7 @@ int get_vol() {
 }
 
 int inc_vol() {
-	int res;
+	int res = -1;
 	FILE* pipe = popen(incvol, "r");
 	char buffer[8];
 	if(pipe && fgets(buffer, sizeof(buffer), pipe) != NULL) {
@@ -91,7 +112,7 @@ int inc_vol() {
 }
 
 int dec_vol() {
-	int res;
+	int res = -1;
 	FILE* pipe = popen(decvol, "r");
 	char buffer[8];
 	if(pipe && fgets(buffer, sizeof(buffer), pipe) != NULL) {
@@ -104,7 +125,7 @@ int dec_vol() {
 }
 
 int toggle_mute() {
-	int res;
+	int res = -1;
 	FILE* pipe = popen(togglemute, "r");
 	char buffer[8];
 	if(pipe && fgets(buffer, sizeof(buffer), pipe) != NULL) {
@@ -116,7 +137,7 @@ int toggle_mute() {
 	return res;
 }
 int get_mute() {
-	int res;
+	int res = -1;
 	FILE* pipe = popen(getmute, "r");
 	char buffer[8];
 	if(pipe && fgets(buffer, sizeof(buffer), pipe) != NULL) {
@@ -128,7 +149,7 @@ int get_mute() {
 	return res;
 }
 int get_bright() {
-	int res;
+	int res = -1;
 	FILE* pipe = popen(bright, "r");
 	char buffer[8];
 	if(pipe && fgets(buffer, sizeof(buffer), pipe) != NULL) {
@@ -141,7 +162,7 @@ int get_bright() {
 }
 
 int inc_bright() {
-	int res;
+	int res = -1;
 	FILE* pipe = popen(incbright, "r");
 	char buffer[8];
 	if(pipe && fgets(buffer, sizeof(buffer), pipe) != NULL) {
@@ -154,7 +175,7 @@ int inc_bright() {
 }
 
 int dec_bright() {
-	int res;
+	int res = -1;
 	FILE* pipe = popen(decbright, "r");
 	char buffer[8];
 	if(pipe && fgets(buffer, sizeof(buffer), pipe) != NULL) {
@@ -193,31 +214,33 @@ void get_status() {
 	}
 // MEMORY
 	{
-		size_t line_count = 0;
-		float total, avail;
-		char line[64];
-		fseek(mem_file, 0, SEEK_SET);
-		while(fgets(line, sizeof(line), mem_file) != NULL) {
-			line_count++;
-			if(line_count == 1) {
-				size_t line_size = strlen(line);
-				const char startstr[]= "MemTotal:      ";
-				const char endstr[]=" kB";
-				line[line_size - (sizeof(endstr) - 1)] = '\0';
-				strcpy(line, line + sizeof(startstr));
-				total = atof(line);
+		if(mem_file != NULL){
+			size_t line_count = 0;
+			float total = 0, avail = 0;
+			char line[64];
+			fseek(mem_file, 0, SEEK_SET);
+			while(fgets(line, sizeof(line), mem_file) != NULL) {
+				line_count++;
+				if(line_count == 1) {
+					size_t line_size = strlen(line);
+					const char startstr[]= "MemTotal:      ";
+					const char endstr[]=" kB";
+					line[line_size - (sizeof(endstr) - 1)] = '\0';
+					strcpy(line, line + sizeof(startstr));
+					total = atof(line);
+				}
+				if(line_count == 3) {
+					size_t line_size = strlen(line);
+					const char startstr[]= "MemAvailable:  ";
+					const char endstr[]=" kB";
+					line[line_size - (sizeof(endstr) - 1)] = '\0';
+					strcpy(line, line + sizeof(startstr));
+					avail = atof(line);
+					break;
+				}
 			}
-			if(line_count == 3) {
-				size_t line_size = strlen(line);
-				const char startstr[]= "MemAvailable:  ";
-				const char endstr[]=" kB";
-				line[line_size - (sizeof(endstr) - 1)] = '\0';
-				strcpy(line, line + sizeof(startstr));
-				avail = atof(line);
-				break;
-			}
+			cur += sprintf(client_buffer + cur, " | MEM: %.2f/%.2f", (total - avail)/1048576,total/1048576);
 		}
-		cur += sprintf(client_buffer + cur, " | MEM: %.2f/%.2f", (total - avail)/1048576,total/1048576);
 	}
 // NETWORK
 	{
@@ -232,18 +255,20 @@ void get_status() {
 	}
 // BATTERY
 	{
-		char line[8];
-		fseek(batcap_file, 0, SEEK_SET);
-		while(fgets(line, sizeof(line), batcap_file )){
-			size_t len = strlen(line);
-			line[len - 1] = '\0';
-			cur += sprintf(client_buffer + cur, " | BAT: %s", line);
-		}
-		fseek(batstate_file, 0,SEEK_SET);
-		while(fgets(line, sizeof(line), batstate_file)){
-			size_t len = strlen(line);
-			line[len - 1] = '\0';
-			cur += sprintf(client_buffer + cur, " %s", line);
+		if(batcap_file != NULL) {
+			char line[8];
+			fseek(batcap_file, 0, SEEK_SET);
+			while(fgets(line, sizeof(line), batcap_file )){
+				size_t len = strlen(line);
+				line[len - 1] = '\0';
+				cur += sprintf(client_buffer + cur, " | BAT: %s", line);
+			}
+			fseek(batstate_file, 0,SEEK_SET);
+			while(fgets(line, sizeof(line), batstate_file)){
+				size_t len = strlen(line);
+				line[len - 1] = '\0';
+				cur += sprintf(client_buffer + cur, " %s", line);
+			}
 		}
 	}
 // TIME
@@ -253,10 +278,10 @@ void get_status() {
 
         char date[18];
         strftime(date, 18, "%H:%M %a, %b %e", ltm);
-	cur += sprintf(client_buffer + cur, " | %s \"", date);
+	cur += sprintf(client_buffer + cur, " | %s ", date);
 }
 
-void deinit() {
+int deinit() {
 	if(clientSocket != -1) {
 		close(clientSocket);
 		clientSocket = -1;
@@ -264,4 +289,5 @@ void deinit() {
 	if(batcap_file != NULL)	fclose(batcap_file);
 	if(batstate_file != NULL) fclose(batstate_file);
 	if(mem_file != NULL) fclose(mem_file);
+	return 0;
 }

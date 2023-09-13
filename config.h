@@ -25,7 +25,10 @@ static const char *colors[][3]      = {
 
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
-static const char *bar_buttons[] = { "COOLER BOOST" };
+static char cb_buffer[32]; //extra
+static char vol_buffer[32]; //extra
+static char bright_buffer[32]; //extra
+static const char *buttons_for[] = { " BOOST: %s |", " - VOL: %d%% + |", " - BRI: %d%% + |", " + ", " - " }; //extra
 static const Rule rules[] = {
 	/* xprop(1):
 	 *	WM_CLASS(STRING) = instance, class

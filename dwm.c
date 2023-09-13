@@ -482,8 +482,31 @@ buttonpress(XEvent *e)
 			click = ClkLtSymbol;
 		else if (ev->x > selmon->ww - (int)tw_status)
 			click = ClkStatusText;
-		else if (ev->x > (selmon->ww - (tw_status + TEXTW(bar_buttons[0]) - lrpad + 10))) //Work around for clicking offsets
-			toggle_cb();
+		else if (ev->x > (selmon->ww - (tw_status += (TEXTW(cb_buffer) - lrpad) + 5))) { //Cooler Boost (BOOST)
+			sprintf(cb_buffer, buttons_for[0], toggle_cb() == 1 ? " ON" : "OFF");
+			drawbars();
+		}
+		else if (ev->x > (selmon->ww - (tw_status += (TEXTW(buttons_for[3]) - lrpad)))) { //Vol (+)
+			sprintf(vol_buffer, buttons_for[1], inc_vol());
+			drawbars();
+		}
+		else if (ev->x > (selmon->ww - (tw_status += (TEXTW(vol_buffer) - TEXTW(buttons_for[4]) - TEXTW(buttons_for[3]))))) { //Vol Mute (VOL | MUTE)
+			if(toggle_mute() == 1) sprintf(vol_buffer, " - MUT: %d%% + |", get_vol());
+			else sprintf(vol_buffer, buttons_for[1], get_vol());
+			drawbars();
+		}
+		else if (ev->x > (selmon->ww - (tw_status += (TEXTW(buttons_for[4]))))) { //Vol (-)
+			sprintf(vol_buffer, buttons_for[1], dec_vol());
+			drawbars();
+		}
+		else if (ev->x > (selmon->ww - (tw_status += (TEXTW(buttons_for[3]) - lrpad)))) { //Brightness (+)
+			sprintf(bright_buffer, buttons_for[2], inc_bright());
+			drawbars();
+		}
+		else if (ev->x > (selmon->ww - (tw_status += (TEXTW(bright_buffer))))) { //Brightness (-)
+			sprintf(bright_buffer, buttons_for[2], dec_bright());
+			drawbars();
+		}
 		else
 			click = ClkWinTitle;
 	} else if ((c = wintoclient(ev->window))) {
@@ -757,9 +780,16 @@ drawbar(Monitor *m)
 	tw = TEXTW(stext) - lrpad + 2; /* 2px right padding */
 	drw_text(drw, m->ww - tw, 0, tw, bh, 0, stext, 0);
 	
-	int text_width = TEXTW(bar_buttons[0]) -lrpad + 10;
-	drw_text(drw, m->ww - text_width - tw, 0, text_width, bh, 0, bar_buttons[0], 0);
+	int text_width = TEXTW(cb_buffer) - lrpad;
+	drw_text(drw, m->ww - text_width - tw, 0, text_width, bh, 0, cb_buffer, 0);
+	tw += text_width;
+
+	text_width = TEXTW(vol_buffer) - lrpad;
+	drw_text(drw, m->ww - text_width - tw, 0, text_width, bh, 0, vol_buffer, 0);
+	tw += text_width;
 	
+	text_width = TEXTW(bright_buffer) - lrpad;
+	drw_text(drw, m->ww - text_width - tw, 0, text_width, bh, 0, bright_buffer, 0);
 	tw += text_width;
 
 	for (c = m->clients; c; c = c->next) {
@@ -1772,6 +1802,10 @@ setup(void)
 	XSelectInput(dpy, root, wa.event_mask);
 	grabkeys();
 	focus(NULL);
+
+	sprintf(cb_buffer, buttons_for[0], get_cb() == 1 ? " ON" : "OFF");
+	sprintf(vol_buffer, buttons_for[1], get_vol());
+	sprintf(bright_buffer, buttons_for[2], get_bright());
 }
 
 void
@@ -2320,7 +2354,8 @@ main(int argc, char *argv[])
 	if (!(dpy = XOpenDisplay(NULL)))
 		die("dwm: cannot open display");
 	checkotherwm();
-	setup();
+	setup(); //extra
+	if(!init()) system("xsetroot -name \"noo\"");
 #ifdef __OpenBSD__
 	if (pledge("stdio rpath proc exec", NULL) == -1)
 		die("pledge");
@@ -2329,5 +2364,6 @@ main(int argc, char *argv[])
 	run();
 	cleanup();
 	XCloseDisplay(dpy);
+	deinit(); //extra
 	return EXIT_SUCCESS;
 }
