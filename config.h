@@ -3,15 +3,15 @@
 /* appearance */
 static const unsigned int borderpx  = 1;        /* border pixel of windows */
 static const unsigned int snap      = 32;       /* snap pixel */
-static const unsigned int gappih    = 10;       /* horiz inner gap between windows */
-static const unsigned int gappiv    = 10;       /* vert inner gap between windows */
-static const unsigned int gappoh    = 10;       /* horiz outer gap between windows and screen edge */
-static const unsigned int gappov    = 10;       /* vert outer gap between windows and screen edge */
+static const unsigned int gappih    = 0;       /* horiz inner gap between windows */
+static const unsigned int gappiv    = 0;       /* vert inner gap between windows */
+static const unsigned int gappoh    = 0;       /* horiz outer gap between windows and screen edge */
+static const unsigned int gappov    = 0;       /* vert outer gap between windows and screen edge */
 static const int smartgaps          = 0;        /* 1 means no outer gap when there is only one window */
 static const int showbar            = 1;        /* 0 means no bar */
 static const int topbar             = 1;        /* 0 means bottom bar */
-static const char *fonts[]          = { "Noto Sans Mono:style=Regular:size=10", "Symbols Nerd Font Mono:style=Regular:size=10" };
-static const char dmenufont[]       = "monospace:size=10";
+static const char *fonts[]          = { "Noto Sans Mono:style=Regular:size=13", "Symbols Nerd Font Mono:style=Regular:size=13" };
+static const char dmenufont[]       = "monospace:size=13";
 static const char col_gray1[]       = "#222222";
 static const char col_gray2[]       = "#444444";
 static const char col_gray3[]       = "#bbbbbb";
@@ -24,11 +24,10 @@ static const char *colors[][3]      = {
 };
 
 /* tagging */
-static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+static const char *tags[] = { "1", "2", "3", "4", "5" };
 static char cb_buffer[32]; //extra
 static char vol_buffer[32]; //extra
 static char bright_buffer[32]; //extra
-static const char *buttons_for[] = { " BOOST: %s |", " - VOL: %d%% + |", " - BRI: %d%% + |", " + ", " - " }; //extra
 static const Rule rules[] = {
 	/* xprop(1):
 	 *	WM_CLASS(STRING) = instance, class
@@ -64,6 +63,12 @@ static const Layout layouts[] = {
 /* helper for spawning shell commands in the pre dwm-5.0 fashion */
 #define SHCMD(cmd) { .v = (const char*[]){ "/bin/sh", "-c", cmd, NULL } }
 
+/* custom scripts */
+static const char *volinc[] = { "sh", "-c", "pactl set-sink-volume @DEFAULT_SINK@ +5% && v=$(pactl list sinks | grep '^[[:space:]]Volume:' | head -n1 | sed -e 's,.* \\([0-9][0-9]*\\)%.*, \\1,') && xsetroot -name \"<1>$v\"", NULL };
+static const char *volmute[] = { "sh", "-c", "pactl set-sink-volume @DEFAULT_SINK@ +5% &&v=$(pactl list sinks | grep '^[[:space:]]Volume:' | head -n1 | sed -e 's,.* \\([0-9][0-9]*\\)%.*, \\1,') && xsetroot -name \"<2>$v\"", NULL };
+static const char *voldec[] = { "sh", "-c", "pactl set-sink-volume @DEFAULT_SINK@ -5% && v=$(pactl list sinks | grep '^[[:space:]]Volume:' | head -n1 | sed -e 's,.* \\([0-9][0-9]*\\)%.*, \\1,') && xsetroot -name \"<1>$v\"", NULL };
+static const char *brightinc[] = { "sh", "-c", "xsetroot -name \"<3>$(brightnessctl set 5%+ | grep \"Current brightness\" | awk '{print $NF}' | tr -d '()%')\""};
+static const char *brightdec[] = { "sh", "-c", "xsetroot -name \"<3>$(brightnessctl set 5%- | grep \"Current brightness\" | awk '{print $NF}' | tr -d '()%')\""};
 /* commands */
 static const char *termcmd[]  = { "alacritty", NULL };
 static const char *browser[]  = { "brave", NULL };
@@ -71,7 +76,9 @@ static const char *browser_other[]  = { "firefox", NULL };
 static const char *explorer[]  = { "thunar", NULL };
 static const char *discord[]  = { "discord", NULL };
 static const char *patchbay[] = { "qpwgraph", NULL };
-
+static const char *steam[] = {"steam", NULL };
+static const char *rofi[] = {"rofi", "-show", "drun"};
+static const char *cliptyper[] = {"/home/dedshot/script.sh", NULL};
 static const Key keys[] = {
 	/* modifier                     key        function        argument */
 	{ MODKEY,		        XK_Return, spawn,          {.v = termcmd } },
@@ -80,11 +87,14 @@ static const Key keys[] = {
 	{ MODKEY,		        XK_d,      spawn,          {.v = discord } },
 	{ MODKEY,		        XK_p,      spawn,          {.v = patchbay } },
 	{ MODKEY|ShiftMask,	        XK_b,      spawn,          {.v = browser_other } },
+	{ MODKEY,		        XK_s,      spawn,          {.v = steam } },
+	{ MODKEY,			XK_v,	   spawn,	   {.v = cliptyper } },
+	{ MODKEY,			XK_r,	   spawn,	   {.v = rofi } },
 	{ MODKEY|ShiftMask,             XK_p,      togglebar,      {0} },
 	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
 	{ MODKEY,                       XK_k,      focusstack,     {.i = -1 } },
 	{ MODKEY,                       XK_i,      incnmaster,     {.i = +1 } },
-	{ MODKEY,                       XK_d,      incnmaster,     {.i = -1 } },
+	{ MODKEY,                       XK_o,      incnmaster,     {.i = -1 } },
 	{ MODKEY,                       XK_h,      setmfact,       {.f = -0.05} },
 	{ MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
 	{ MODKEY|ShiftMask,             XK_Return, zoom,           {0} },
@@ -101,15 +111,12 @@ static const Key keys[] = {
 	{ MODKEY,                       XK_period, focusmon,       {.i = +1 } },
 	{ MODKEY|ShiftMask,             XK_comma,  tagmon,         {.i = -1 } },
 	{ MODKEY|ShiftMask,             XK_period, tagmon,         {.i = +1 } },
+	{ MODKEY,			XK_y,	   spawn,	   {.v =  volinc } },	
 	TAGKEYS(                        XK_1,                      0)
 	TAGKEYS(                        XK_2,                      1)
 	TAGKEYS(                        XK_3,                      2)
 	TAGKEYS(                        XK_4,                      3)
 	TAGKEYS(                        XK_5,                      4)
-	TAGKEYS(                        XK_6,                      5)
-	TAGKEYS(                        XK_7,                      6)
-	TAGKEYS(                        XK_8,                      7)
-	TAGKEYS(                        XK_9,                      8)
 	{ MODKEY|ShiftMask,             XK_m,      quit,           {0} },
 };
 
@@ -128,5 +135,10 @@ static const Button buttons[] = {
 	{ ClkTagBar,            0,              Button3,        toggleview,     {0} },
 	{ ClkTagBar,            MODKEY,         Button1,        tag,            {0} },
 	{ ClkTagBar,            MODKEY,         Button3,        toggletag,      {0} },
+	{ ClkVolInc,            0,	        Button1,        spawn,		{.v = volinc} },
+	{ ClkVolMute,           0,	        Button1,        spawn,		{.v = volmute} },
+	{ ClkVolDec,            0,	        Button1,        spawn,		{.v = voldec} },
+	{ ClkBrightInc,         0,	        Button1,        spawn,		{.v = brightinc} },
+	{ ClkBrightDec,         0,	        Button1,        spawn,		{.v = brightdec} },
 };
 

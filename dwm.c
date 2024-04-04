@@ -66,7 +66,8 @@ enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
        NetWMWindowTypeDialog, NetClientList, NetLast }; /* EWMH atoms */
 enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms */
 enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
-       ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
+       ClkClientWin, ClkRootWin, ClkLast, 
+       ClkVolInc, ClkVolMute, ClkVolDec, ClkBrightInc, ClkBrightDec}; /* clicks */
 
 typedef union {
 	int i;
@@ -482,31 +483,21 @@ buttonpress(XEvent *e)
 			click = ClkLtSymbol;
 		else if (ev->x > selmon->ww - (int)tw_status)
 			click = ClkStatusText;
-		else if (ev->x > (selmon->ww - (tw_status += (TEXTW(cb_buffer) - lrpad) + 5))) { //Cooler Boost (BOOST)
-			sprintf(cb_buffer, buttons_for[0], toggle_cb() == 1 ? " ON" : "OFF");
-			drawbars();
+		//else if (ev->x > (selmon->ww - (tw_status += (TEXTW(cb_buffer) - lrpad) + 5))) { //Cooler Boost (BOOST)
+		//	sprintf(cb_buffer, buttons_for[0], toggle_cb() == 1 ? " ON" : "OFF");
+		//	drawbars();
+		//}
+		else if (ev->x > (selmon->ww - (tw_status += (TEXTW(" + ") - lrpad)))) //Vol (+)
+			click=ClkVolInc;
+		else if (ev->x > (selmon->ww - (tw_status += (TEXTW(vol_buffer) - TEXTW(" + ") - TEXTW(" - "))))) {//Vol Mute
+			//click=ClkVolMute;
 		}
-		else if (ev->x > (selmon->ww - (tw_status += (TEXTW(buttons_for[3]) - lrpad)))) { //Vol (+)
-			sprintf(vol_buffer, buttons_for[1], inc_vol());
-			drawbars();
-		}
-		else if (ev->x > (selmon->ww - (tw_status += (TEXTW(vol_buffer) - TEXTW(buttons_for[4]) - TEXTW(buttons_for[3]))))) { //Vol Mute (VOL | MUTE)
-			if(toggle_mute() == 1) sprintf(vol_buffer, " - MUT: %d%% + |", get_vol());
-			else sprintf(vol_buffer, buttons_for[1], get_vol());
-			drawbars();
-		}
-		else if (ev->x > (selmon->ww - (tw_status += (TEXTW(buttons_for[4]))))) { //Vol (-)
-			sprintf(vol_buffer, buttons_for[1], dec_vol());
-			drawbars();
-		}
-		else if (ev->x > (selmon->ww - (tw_status += (TEXTW(buttons_for[3]) - lrpad)))) { //Brightness (+)
-			sprintf(bright_buffer, buttons_for[2], inc_bright());
-			drawbars();
-		}
-		else if (ev->x > (selmon->ww - (tw_status += (TEXTW(bright_buffer))))) { //Brightness (-)
-			sprintf(bright_buffer, buttons_for[2], dec_bright());
-			drawbars();
-		}
+		else if (ev->x > (selmon->ww - (tw_status += (TEXTW(" - "))))) //Vol (-)
+			click=ClkVolDec;
+		else if (ev->x > (selmon->ww - (tw_status += (TEXTW(" + ") - lrpad)))) //Brightness (+)
+			click=ClkBrightInc;
+		else if (ev->x > (selmon->ww - (tw_status += (TEXTW(bright_buffer))))) //Brightness (-)
+			click=ClkBrightDec;
 		else
 			click = ClkWinTitle;
 	} else if ((c = wintoclient(ev->window))) {
@@ -780,9 +771,11 @@ drawbar(Monitor *m)
 	tw = TEXTW(stext) - lrpad + 2; /* 2px right padding */
 	drw_text(drw, m->ww - tw, 0, tw, bh, 0, stext, 0);
 	
-	int text_width = TEXTW(cb_buffer) - lrpad;
-	drw_text(drw, m->ww - text_width - tw, 0, text_width, bh, 0, cb_buffer, 0);
-	tw += text_width;
+	int text_width = 0;
+
+	//text_width += TEXTW(cb_buffer) - lrpad;
+	//drw_text(drw, m->ww - text_width - tw, 0, text_width, bh, 0, cb_buffer, 0);
+	//tw += text_width;
 
 	text_width = TEXTW(vol_buffer) - lrpad;
 	drw_text(drw, m->ww - text_width - tw, 0, text_width, bh, 0, vol_buffer, 0);
@@ -1803,9 +1796,9 @@ setup(void)
 	grabkeys();
 	focus(NULL);
 
-	sprintf(cb_buffer, buttons_for[0], get_cb() == 1 ? " ON" : "OFF");
-	sprintf(vol_buffer, buttons_for[1], get_vol());
-	sprintf(bright_buffer, buttons_for[2], get_bright());
+	//sprintf(cb_buffer, buttons_for[0], get_cb() == 1 ? " ON" : "OFF");
+	sprintf(vol_buffer, "| - VOL:  %s%% + |", "-1");
+	sprintf(bright_buffer, " - BRI:  %s%% + ", "-1");
 }
 
 void
@@ -2207,9 +2200,27 @@ updatesizehints(Client *c)
 void
 updatestatus(void)
 {
-	if (!gettextprop(root, XA_WM_NAME, stext, sizeof(stext)))
+	char temptext[256];
+	int seek = 0;
+	if (!gettextprop(root, XA_WM_NAME, temptext, sizeof(temptext)))
 		strcpy(stext, "dwm-"VERSION);
-	drawbar(selmon);
+	if(temptext[seek++] == '<') {
+		char bufferid[32];
+		for(; temptext[seek] != '>' || seek > sizeof(bufferid); seek++){
+		       bufferid[seek - 1] = temptext[seek];
+		       bufferid[seek] = '\0';
+		}
+		int id = atoi(bufferid);
+		switch(id) {
+			case 1:
+				snprintf(vol_buffer, sizeof(vol_buffer), "| - VOL: %s%% + |", temptext + seek + 1);
+				break;
+			case 3:
+				snprintf(bright_buffer, sizeof(bright_buffer), " - BRI: %s%% + ", temptext + seek + 1);
+				break;
+		}
+	}
+	drawbars();
 }
 
 void

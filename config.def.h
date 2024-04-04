@@ -71,7 +71,9 @@ static const char *browser_other[]  = { "firefox", NULL };
 static const char *explorer[]  = { "thunar", NULL };
 static const char *discord[]  = { "discord", NULL };
 static const char *patchbay[] = { "qpwgraph", NULL };
-
+static const char *steam[] = {"steam", NULL };
+static const char *rofi[] = {"rofi -show drun", NULL};
+static const char *cliptyper[] = {"/home/dedshot/script.sh", NULL};
 static const Key keys[] = {
 	/* modifier                     key        function        argument */
 	{ MODKEY,		        XK_Return, spawn,          {.v = termcmd } },
@@ -80,11 +82,14 @@ static const Key keys[] = {
 	{ MODKEY,		        XK_d,      spawn,          {.v = discord } },
 	{ MODKEY,		        XK_p,      spawn,          {.v = patchbay } },
 	{ MODKEY|ShiftMask,	        XK_b,      spawn,          {.v = browser_other } },
+	{ MODKEY,		        XK_s,      spawn,          {.v = steam } },
+	{ MODKEY,			XK_v,	   spawn,	   {.v = cliptyper } },
+	{ MODKEY,			XK_r,	   spwan,	   {.v = rofi } },
 	{ MODKEY|ShiftMask,             XK_p,      togglebar,      {0} },
 	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
 	{ MODKEY,                       XK_k,      focusstack,     {.i = -1 } },
 	{ MODKEY,                       XK_i,      incnmaster,     {.i = +1 } },
-	{ MODKEY,                       XK_d,      incnmaster,     {.i = -1 } },
+	{ MODKEY,                       XK_o,      incnmaster,     {.i = -1 } },
 	{ MODKEY,                       XK_h,      setmfact,       {.f = -0.05} },
 	{ MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
 	{ MODKEY|ShiftMask,             XK_Return, zoom,           {0} },
