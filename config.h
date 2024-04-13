@@ -25,9 +25,9 @@ static const char *colors[][3]      = {
 
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5" };
-static char cb_buffer[32]; //extra
-static char vol_buffer[32]; //extra
-static char bright_buffer[32]; //extra
+//static char cb_buffer[32]; //extra
+static char vol_buffer[32] = " | - VOL: -1% + | "; //extra
+static char bright_buffer[32] = " - BRI: -1% + "; //extra
 static const Rule rules[] = {
 	/* xprop(1):
 	 *	WM_CLASS(STRING) = instance, class
@@ -64,11 +64,11 @@ static const Layout layouts[] = {
 #define SHCMD(cmd) { .v = (const char*[]){ "/bin/sh", "-c", cmd, NULL } }
 
 /* custom scripts */
-static const char *volinc[] = { "sh", "-c", "pactl set-sink-volume @DEFAULT_SINK@ +5% && v=$(pactl list sinks | grep '^[[:space:]]Volume:' | head -n1 | sed -e 's,.* \\([0-9][0-9]*\\)%.*, \\1,') && xsetroot -name \"<1>$v\"", NULL };
-static const char *volmute[] = { "sh", "-c", "pactl set-sink-volume @DEFAULT_SINK@ +5% &&v=$(pactl list sinks | grep '^[[:space:]]Volume:' | head -n1 | sed -e 's,.* \\([0-9][0-9]*\\)%.*, \\1,') && xsetroot -name \"<2>$v\"", NULL };
-static const char *voldec[] = { "sh", "-c", "pactl set-sink-volume @DEFAULT_SINK@ -5% && v=$(pactl list sinks | grep '^[[:space:]]Volume:' | head -n1 | sed -e 's,.* \\([0-9][0-9]*\\)%.*, \\1,') && xsetroot -name \"<1>$v\"", NULL };
-static const char *brightinc[] = { "sh", "-c", "xsetroot -name \"<3>$(brightnessctl set 5%+ | grep \"Current brightness\" | awk '{print $NF}' | tr -d '()%')\""};
-static const char *brightdec[] = { "sh", "-c", "xsetroot -name \"<3>$(brightnessctl set 5%- | grep \"Current brightness\" | awk '{print $NF}' | tr -d '()%')\""};
+static const char *volinc[] = { "sh", "-c", "pactl set-sink-volume @DEFAULT_SINK@ +5% && xsetroot -name \"<1>$(pactl get-sink-volume @DEFAULT_SINK@ | awk '{print $5}')\"", NULL };
+static const char *volmute[] = { "sh", "-c", "pactl set-sink-volume @DEFAULT_SINK@ +5% && xsetroot -name \"<1>$(pactl get-sink-volume @DEFAULT_SINK@ | awk '{print $5}')\"", NULL };
+static const char *voldec[] = { "sh", "-c", "pactl set-sink-volume @DEFAULT_SINK@ -5% && xsetroot -name \"<1>$(pactl get-sink-volume @DEFAULT_SINK@ | awk '{print $5}')\"", NULL };
+static const char *brightinc[] = { "sh", "-c", "xsetroot -name \"<3>$(brightnessctl set 5%+ | awk '/Current/ {gsub(/[()]/,\"\",$4); print $4}')\"", NULL};
+static const char *brightdec[] = { "sh", "-c", "xsetroot -name \"<3>$(brightnessctl set 5%- | awk '/Current/ {gsub(/[()]/,\"\",$4); print $4}')\"", NULL};
 /* commands */
 static const char *termcmd[]  = { "alacritty", NULL };
 static const char *browser[]  = { "brave", NULL };

@@ -1795,10 +1795,6 @@ setup(void)
 	XSelectInput(dpy, root, wa.event_mask);
 	grabkeys();
 	focus(NULL);
-
-	//sprintf(cb_buffer, buttons_for[0], get_cb() == 1 ? " ON" : "OFF");
-	sprintf(vol_buffer, "| - VOL:  %s%% + |", "-1");
-	sprintf(bright_buffer, " - BRI:  %s%% + ", "-1");
 }
 
 void
@@ -2213,12 +2209,14 @@ updatestatus(void)
 		int id = atoi(bufferid);
 		switch(id) {
 			case 1:
-				snprintf(vol_buffer, sizeof(vol_buffer), "| - VOL: %s%% + |", temptext + seek + 1);
+				snprintf(vol_buffer, sizeof(vol_buffer), "| - VOL: %s + |", temptext + seek + 1);
 				break;
 			case 3:
-				snprintf(bright_buffer, sizeof(bright_buffer), " - BRI: %s%% + ", temptext + seek + 1);
+				snprintf(bright_buffer, sizeof(bright_buffer), " - BRI: %s + ", temptext + seek + 1);
 				break;
 		}
+	} else {
+		snprintf(stext, sizeof(stext), "%s", temptext);
 	}
 	drawbars();
 }
