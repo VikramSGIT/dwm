@@ -43,7 +43,6 @@
 
 #include "drw.h"
 #include "util.h"
-#include "system.h" //extra
 
 /* macros */
 #define BUTTONMASK              (ButtonPressMask|ButtonReleaseMask)
@@ -2363,8 +2362,7 @@ main(int argc, char *argv[])
 	if (!(dpy = XOpenDisplay(NULL)))
 		die("dwm: cannot open display");
 	checkotherwm();
-	setup(); //extra
-	if(!init()) system("xsetroot -name \"noo\"");
+	setup();
 #ifdef __OpenBSD__
 	if (pledge("stdio rpath proc exec", NULL) == -1)
 		die("pledge");
@@ -2373,6 +2371,5 @@ main(int argc, char *argv[])
 	run();
 	cleanup();
 	XCloseDisplay(dpy);
-	deinit(); //extra
 	return EXIT_SUCCESS;
 }
