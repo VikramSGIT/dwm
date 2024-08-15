@@ -25,9 +25,9 @@ static const char *colors[][3]      = {
 
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5" };
-static char cb_buffer[32]; //extra
-static char vol_buffer[32]; //extra
-static char bright_buffer[32]; //extra
+//static char cb_buffer[32]; //extra
+static char vol_buffer[32] = " | - VOL: ??% + | "; //extra
+static char bright_buffer[32] = " - BRI: -1% + "; //extra
 static const Rule rules[] = {
 	/* xprop(1):
 	 *	WM_CLASS(STRING) = instance, class
@@ -64,11 +64,14 @@ static const Layout layouts[] = {
 #define SHCMD(cmd) { .v = (const char*[]){ "/bin/sh", "-c", cmd, NULL } }
 
 /* custom scripts */
-static const char *volinc[] = { "sh", "-c", "pactl set-sink-volume @DEFAULT_SINK@ +5% && v=$(pactl list sinks | grep '^[[:space:]]Volume:' | head -n1 | sed -e 's,.* \\([0-9][0-9]*\\)%.*, \\1,') && xsetroot -name \"<1>$v\"", NULL };
-static const char *volmute[] = { "sh", "-c", "pactl set-sink-volume @DEFAULT_SINK@ +5% &&v=$(pactl list sinks | grep '^[[:space:]]Volume:' | head -n1 | sed -e 's,.* \\([0-9][0-9]*\\)%.*, \\1,') && xsetroot -name \"<2>$v\"", NULL };
-static const char *voldec[] = { "sh", "-c", "pactl set-sink-volume @DEFAULT_SINK@ -5% && v=$(pactl list sinks | grep '^[[:space:]]Volume:' | head -n1 | sed -e 's,.* \\([0-9][0-9]*\\)%.*, \\1,') && xsetroot -name \"<1>$v\"", NULL };
-static const char *brightinc[] = { "sh", "-c", "xsetroot -name \"<3>$(brightnessctl set 5%+ | grep \"Current brightness\" | awk '{print $NF}' | tr -d '()%')\""};
-static const char *brightdec[] = { "sh", "-c", "xsetroot -name \"<3>$(brightnessctl set 5%- | grep \"Current brightness\" | awk '{print $NF}' | tr -d '()%')\""};
+static const char *gettime[] = {"sh", "-c", "while true; do xsetroot -name \" $(date +'%H:%M %a %d-%b')\"; sleep $((60 - $(date +%S))); done", NULL};
+static const char *volget[] = { "sh", "-c", "xsetroot -name \"<1>$(wpctl get-volume @DEFAULT_SINK@ | awk '{ if ($3 == \"[MUTED]\") { print \"MUT: \" $2 * 100 \"%\" } else { print \"VOL: \" $2 * 100 \"%\" } }')\"", NULL};
+static const char *volinc[] = { "sh", "-c", "wpctl set-volume @DEFAULT_SINK@ 5%+ && xsetroot -name \"<1>$(wpctl get-volume @DEFAULT_SINK@ | awk '{print \"VOL: \"$2 * 100 \"%\"}')\"", NULL };
+static const char *volmute[] = { "sh", "-c", "wpctl set-mute @DEFAULT_SINK@ toggle && xsetroot -name \"<1>$(wpctl get-volume @DEFAULT_SINK@ | awk '{ if ($3 == \"[MUTED]\") { print \"MUT: \" $2 * 100 \"%\" } else { print \"VOL: \" $2 * 100 \"%\" } }')\"", NULL };
+static const char *voldec[] = { "sh", "-c", "wpctl set-volume @DEFAULT_SINK@ 5%- && xsetroot -name \"<1>$(wpctl get-volume @DEFAULT_SINK@ | awk '{print \"VOL: \" $2 * 100 \"%\"}')\"", NULL };
+static const char *brightget[] = { "sh", "-c", "xsetroot -name \"<3>$(brightnessctl | awk '/Current/ {gsub(/[()]/,\"\",$4); print $4}')\"", NULL};
+static const char *brightinc[] = { "sh", "-c", "xsetroot -name \"<3>$(brightnessctl set 5%+ | awk '/Current/ {gsub(/[()]/,\"\",$4); print $4}')\"", NULL};
+static const char *brightdec[] = { "sh", "-c", "xsetroot -name \"<3>$(brightnessctl set 5%- | awk '/Current/ {gsub(/[()]/,\"\",$4); print $4}')\"", NULL};
 /* commands */
 static const char *termcmd[]  = { "alacritty", NULL };
 static const char *browser[]  = { "brave", NULL };
@@ -111,7 +114,9 @@ static const Key keys[] = {
 	{ MODKEY,                       XK_period, focusmon,       {.i = +1 } },
 	{ MODKEY|ShiftMask,             XK_comma,  tagmon,         {.i = -1 } },
 	{ MODKEY|ShiftMask,             XK_period, tagmon,         {.i = +1 } },
-	{ MODKEY,			XK_y,	   spawn,	   {.v =  volinc } },	
+	{ MODKEY,			XK_F10,	   spawn,	   {.v =  voldec } },	
+	{ MODKEY,			XK_F11,	   spawn,	   {.v =  volinc } },	
+	{ MODKEY,			XK_F9,	   spawn,	   {.v =  volmute } },	
 	TAGKEYS(                        XK_1,                      0)
 	TAGKEYS(                        XK_2,                      1)
 	TAGKEYS(                        XK_3,                      2)

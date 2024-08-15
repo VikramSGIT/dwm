@@ -488,9 +488,8 @@ buttonpress(XEvent *e)
 		//}
 		else if (ev->x > (selmon->ww - (tw_status += (TEXTW(" + ") - lrpad)))) //Vol (+)
 			click=ClkVolInc;
-		else if (ev->x > (selmon->ww - (tw_status += (TEXTW(vol_buffer) - TEXTW(" + ") - TEXTW(" - "))))) {//Vol Mute
-			//click=ClkVolMute;
-		}
+		else if (ev->x > (selmon->ww - (tw_status += (TEXTW(vol_buffer) - TEXTW(" + ") - TEXTW(" - "))))) //Vol Mute
+			click=ClkVolMute;
 		else if (ev->x > (selmon->ww - (tw_status += (TEXTW(" - "))))) //Vol (-)
 			click=ClkVolDec;
 		else if (ev->x > (selmon->ww - (tw_status += (TEXTW(" + ") - lrpad)))) //Brightness (+)
@@ -1771,6 +1770,12 @@ setup(void)
 	for (i = 0; i < LENGTH(colors); i++)
 		scheme[i] = drw_scm_create(drw, colors[i], 3);
 	/* init bars */
+	const Arg arg1 = {.v = volget};
+	const Arg arg2 = {.v = brightget};
+	const Arg arg3 = {.v = gettime};
+	spawn(&arg1);
+	spawn(&arg2);
+	spawn(&arg3);
 	updatebars();
 	updatestatus();
 	/* supporting window for NetWMCheck */
@@ -2208,7 +2213,7 @@ updatestatus(void)
 		int id = atoi(bufferid);
 		switch(id) {
 			case 1:
-				snprintf(vol_buffer, sizeof(vol_buffer), "| - VOL: %s + |", temptext + seek + 1);
+				snprintf(vol_buffer, sizeof(vol_buffer), "| - %s + |", temptext + seek + 1);
 				break;
 			case 3:
 				snprintf(bright_buffer, sizeof(bright_buffer), " - BRI: %s + ", temptext + seek + 1);
