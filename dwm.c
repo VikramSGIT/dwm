@@ -1770,12 +1770,8 @@ setup(void)
 	for (i = 0; i < LENGTH(colors); i++)
 		scheme[i] = drw_scm_create(drw, colors[i], 3);
 	/* init bars */
-	const Arg arg1 = {.v = volget};
-	const Arg arg2 = {.v = brightget};
-	const Arg arg3 = {.v = gettime};
+	const Arg arg1 = {.v = getall};
 	spawn(&arg1);
-	spawn(&arg2);
-	spawn(&arg3);
 	updatebars();
 	updatestatus();
 	/* supporting window for NetWMCheck */

@@ -72,6 +72,7 @@ static const char *voldec[] = { "sh", "-c", "wpctl set-volume @DEFAULT_SINK@ 5%-
 static const char *brightget[] = { "sh", "-c", "xsetroot -name \"<3>$(brightnessctl | awk '/Current/ {gsub(/[()]/,\"\",$4); print $4}')\"", NULL};
 static const char *brightinc[] = { "sh", "-c", "xsetroot -name \"<3>$(brightnessctl set 5%+ | awk '/Current/ {gsub(/[()]/,\"\",$4); print $4}')\"", NULL};
 static const char *brightdec[] = { "sh", "-c", "xsetroot -name \"<3>$(brightnessctl set 5%- | awk '/Current/ {gsub(/[()]/,\"\",$4); print $4}')\"", NULL};
+static const char * getall[] = { "sh", "-c", "xsetroot -name \"<3>$(brightnessctl | awk '/Current/ {gsub(/[()]/,\"\",$4); print $4}')\" && xsetroot -name \"<1>$(wpctl get-volume @DEFAULT_SINK@ | awk '{ if ($3 == \"[MUTED]\") { print \"MUT: \" $2 * 100 \"%\" } else { print \"VOL: \" $2 * 100 \"%\" } }')\" && while true; do xsetroot -name \" $(date +'%H:%M %a %d-%b')\"; sleep $((60 - $(date +%S))); done", NULL};
 /* commands */
 static const char *termcmd[]  = { "alacritty", NULL };
 static const char *browser[]  = { "brave", NULL };
